@@ -2,11 +2,12 @@ import os
 os.urandom(24)
 
 from flask_jwt import JWT, jwt_required, current_identity
-from flask import Flask, request, flash, redirect
+from flask import Flask, jsonify, request, flash, redirect, make_response
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
-from werkzeug.security import safe_str_cmp
+# from werkzeug.security import safe_str_cmp
 from models import User, db, connect_db
+import json
 
 app = Flask(__name__)
 
@@ -26,6 +27,8 @@ def identity(payload):
     return User.get(username, None)
 
 
+
+
 @app.route('/signup', methods=["POST"])
 def signup():
     """Handle user signup.
@@ -34,24 +37,23 @@ def signup():
 
     If the there already is a user with that username: return False
     """
-
     try:
         user = User.signup(
-            username=request.form.username.data,
-            password=request.form.password.data,
-            email=request.form.email.data,
-            location=request.form.location.data
+            username=request.json["username"],
+            password=request.json["password"],
+            first_name=request.json["first_name"],
+            last_name=request.json["last_name"],
+            email=request.json["email"],
+            location=request.json["location"]
         )
+        print("user", user.username)
         db.session.commit()
 
     except IntegrityError:
-        return False
+        return make_response("FAILED", 400)
 
 
     # login(user)
 
-        return token
-
-    else:
-        return False
+    return make_response("Success!", 201)
 

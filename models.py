@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt import JWT, jwt_required, current_identity
 import jwt
 from datetime import datetime, timedelta
+import json
 # from werkzeug.security import safe_str_cmp
 
 bcrypt = Bcrypt()
@@ -19,11 +20,6 @@ class User(db.Model):
     username = db.Column(
         db.String(20),
         primary_key=True
-    )
-
-    password = db.Column(
-        db.Text,
-        nullable=False,
     )
 
     email = db.Column(
@@ -41,6 +37,12 @@ class User(db.Model):
         db.String(20),
         nullable=False,
     )
+
+    password = db.Column(
+        db.Text,
+        nullable=False,
+    )
+
     location = db.Column(
         db.Text,
         nullable=False
@@ -81,8 +83,7 @@ class User(db.Model):
 
         db.session.add(user)
 
-
-        return token
+        return user
 
 
     @classmethod

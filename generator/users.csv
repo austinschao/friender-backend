@@ -1,4 +1,4 @@
-email,username,first_name, last_name, password, location
-mela@hi.com,melaniewong,melanie,wong,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,85042
-austin@hi.net,austinchao,austin,chao,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,91030
-kadeem@hi.com,kadeembest,kadeem,best,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,91031
+username,password,email,first_name,last_name,location
+melaniewong,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,mela@hi.com,melanie,wong,85042
+austinchao,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,austin@hi.net,austin,chao,91030
+kadeembest,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,kadeem@hi.com,kadeem,best,91031
