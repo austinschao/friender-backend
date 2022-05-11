@@ -1,11 +1,10 @@
 import os
-os.urandom(24)
+# os.urandom(24)
 
-from flask_jwt import JWT, jwt_required, current_identity
-from flask import Flask, jsonify, request, flash, redirect, make_response
+# from flask_jwt import JWT, jwt_required, current_identity
+from flask import Flask, jsonify, request, make_response
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
-# from werkzeug.security import safe_str_cmp
 from models import User, db, connect_db
 import json
 
@@ -49,11 +48,16 @@ def signup():
         print("user", user.username)
         db.session.commit()
 
+    # Return a better error message!!!
     except IntegrityError:
-        return make_response("FAILED", 400)
+        return make_response("Duplicate Username/Email", 400)
 
 
-    # login(user)
+    if user.username:
+        token = str(user.encode_auth_token(user.username), "UTF-8")
+        serialized = user.serialize_token(token)
 
-    return make_response("Success!", 201)
+        return (jsonify(serialized), 201)
+
+
 

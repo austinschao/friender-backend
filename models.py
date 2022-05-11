@@ -1,17 +1,18 @@
-"""SQLAlchemy models for Friender."""
-import app
+
+# from app import app
+import os
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt import JWT, jwt_required, current_identity
+# from flask_jwt import JWT, jwt_required, current_identity
 import jwt
 from datetime import datetime, timedelta
-import json
-# from werkzeug.security import safe_str_cmp
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
 
+
+"""SQLAlchemy models for Friender."""
 class User(db.Model):
     """ User in the system. """
 
@@ -62,6 +63,13 @@ class User(db.Model):
 
     def __repr__(self):
         return f"<User {self.username}: {self.email}>"
+
+    def serialize_token(self, token):
+        """ Serialize to dictionary """
+
+        return {
+            "token": token
+        }
 
     @classmethod
     def signup(cls, username, first_name, last_name, email, password, location):
@@ -115,7 +123,7 @@ class User(db.Model):
             }
             return jwt.encode(
                 payload,
-                app.config.get('SECRET_KEY'),
+                os.environ['SECRET_KEY'],
                 algorithm='HS256'
             )
         except Exception as e:
@@ -130,7 +138,7 @@ class User(db.Model):
         """
 
         try:
-            payload = jwt.decode(auth_token, app.config.get('SECRET_KEY'))
+            payload = jwt.decode(auth_token, os.environ['SECRET_KEY'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
             return 'Signature expired. Please log in again.'
