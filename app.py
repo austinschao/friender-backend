@@ -1,3 +1,4 @@
+from crypt import methods
 import os
 # os.urandom(24)
 
@@ -26,7 +27,7 @@ def identity(payload):
     return User.get(username, None)
 
 
-
+##### USER SIGN UP AND LOGIN #####
 
 @app.route('/signup', methods=["POST"])
 def signup():
@@ -59,5 +60,21 @@ def signup():
 
         return (jsonify(serialized), 201)
 
+@app.route('/login', methods=["POST"])
+def login():
+    """ Handle user login and return a token """
 
+    user = User.login(
+        username=request.json["username"],
+        password=request.json["password"]
+    )
+
+
+    if user:
+        token = str(user.encode_auth_token(user.username), "UTF-8")
+        serialized = user.serialize_token(token)
+
+        return (jsonify(serialized), 200)
+
+    return make_response("Invalid Username/Password", 400)
 

@@ -53,6 +53,50 @@ class Reject(db.Model):
         primary_key=True,
     )
 
+
+############## MESSAGES MODEL ###########################
+
+class Message(db.Model):
+    """ Messages in the system. """
+
+    __tablename__ = 'messages'
+
+    id = db.Column(
+         db.Integer,
+        primary_key=True,
+    )
+
+    sender_username = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username', ondelete='CASCADE'),
+        nullable=False,
+    )
+
+    receiver_username = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username', ondelete='CASCADE'),
+        nullable=False,
+    )
+
+    text = db.Column(
+        db.String(140),
+        nullable=False,
+    )
+
+    timestamp = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+
+    # user = db.relationship('User')
+
+    def __repr__(self):
+        return f"<Message #{self.id}: {self.text}, {self.timestamp}, {self.sender_username}, {self.receiver_username}>"
+
+
+
 ############## USER MODEL ###########################
 
 class User(db.Model):
@@ -105,8 +149,19 @@ class User(db.Model):
         default=DEFAULT_PROFILE_PIC
     )
 
-    messages = db.relationship('Message', order_by='Message.timestamp.desc()',
-                                                cascade="all,delete")
+    messages_sent = db.relationship('User',
+                                secondary="messages",
+                                primaryjoin=(Message.sender_username == username),
+                                secondaryjoin=(Message.receiver_username == username),
+                                order_by='Message.timestamp.desc()',
+                                cascade="all,delete")
+
+    messages_received = db.relationship('User',
+                                secondary="messages",
+                                primaryjoin=(Message.receiver_username == username),
+                                secondaryjoin=(Message.sender_username == username),
+                                order_by='Message.timestamp.desc()',
+                                cascade="all,delete")
 
     matches = db.relationship(
         "User",
@@ -156,13 +211,15 @@ class User(db.Model):
 
 
     @classmethod
-    def authenticate(cls, username, password):
+    def login(cls, username, password):
         """Find user with `username` and `password`.
 
         If can't find matching user (or if password is wrong), returns False.
         """
 
-        user = cls.query.filter_by(username=username)
+        print("username", username)
+        user = cls.query.filter_by(username=username).first()
+        print( "USERRRRRrrrrrrrrrrr", user)
 
         if user:
             is_auth = bcrypt.check_password_hash(user.password, password)
@@ -207,47 +264,6 @@ class User(db.Model):
             return 'Invalid token. Please log in again.'
 
 
-############## MESSAGES MODEL ###########################
-
-class Message(db.Model):
-    """ Messages in the system. """
-
-    __tablename__ = 'messages'
-
-    id = db.Column(
-         db.Integer,
-        primary_key=True,
-    )
-
-    sender_username = db.Column(
-        db.String(20),
-        db.ForeignKey('users.username', ondelete='CASCADE'),
-        nullable=False,
-    )
-
-    receiver_username = db.Column(
-        db.String(20),
-        db.ForeignKey('users.username', ondelete='CASCADE'),
-        nullable=False,
-    )
-
-
-    text = db.Column(
-        db.String(140),
-        nullable=False,
-    )
-
-    timestamp = db.Column(
-        db.DateTime,
-        nullable=False,
-        default=datetime.utcnow,
-    )
-
-
-    user = db.relationship('User')
-
-    def __repr__(self):
-        return f"<Message #{self.id}: {self.text}, {self.timestamp}, {self.sender_username}, {self.receiver_username}>"
 
 
 ############################connect-db############################
