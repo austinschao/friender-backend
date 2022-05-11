@@ -163,12 +163,28 @@ class User(db.Model):
                                 order_by='Message.timestamp.desc()',
                                 cascade="all,delete")
 
+    # Matched?
     matches = db.relationship(
         "User",
         secondary="matches",
         primaryjoin=(Match.username_1_matching == username),
         secondaryjoin=(Match.username_2_matching == username)
     )
+
+
+    #matches_sent
+    # u1 -> u2
+    # u2 -> u1
+
+    #matches_received
+    # u2 <- u1
+    # u1 -> u2
+
+    #if both match each other, add them to the matched table???
+
+
+
+
 
     rejects = db.relationship(
         "User",
@@ -217,9 +233,8 @@ class User(db.Model):
         If can't find matching user (or if password is wrong), returns False.
         """
 
-        print("username", username)
         user = cls.query.filter_by(username=username).first()
-        print( "USERRRRRrrrrrrrrrrr", user)
+
 
         if user:
             is_auth = bcrypt.check_password_hash(user.password, password)
