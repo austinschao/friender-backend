@@ -51,7 +51,8 @@ def signup():
 
     # Return a better error message!!!
     except IntegrityError:
-        return make_response("Duplicate Username/Email", 400)
+        return (jsonify({"error": "Duplicate Username/Email"}), 400)
+
 
 
     if user.username:
@@ -76,5 +77,6 @@ def login():
 
         return (jsonify(serialized), 200)
 
-    return make_response("Invalid Username/Password", 400)
+    else:
+        return (jsonify({"error": "Invalid Username/Password"}), 400)
 
