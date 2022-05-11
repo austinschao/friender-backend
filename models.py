@@ -1,7 +1,6 @@
 
 # from app import app
 import os
-from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 # from flask_jwt import JWT, jwt_required, current_identity
@@ -11,8 +10,51 @@ from datetime import datetime, timedelta
 bcrypt = Bcrypt()
 db = SQLAlchemy()
 
+DEFAULT_PROFILE_PIC = "./static/images/default-pic.png"
 
 """SQLAlchemy models for Friender."""
+
+############## MATCH MODEL ###########################
+
+class Match(db.Model):
+    """ Connection of two matched users to each other. """
+
+    __tablename__ = 'matches'
+
+    username_1_matching = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username', ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    username_2_matching = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username', ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+
+############## REJECT MODEL ###########################
+
+class Reject(db.Model):
+    """ Connection rejected user to user who rejected them. """
+
+    __tablename__ = 'rejects'
+
+    user_rejecting = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username', ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    user_rejected = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username', ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+############## USER MODEL ###########################
+
 class User(db.Model):
     """ User in the system. """
 
@@ -58,8 +100,27 @@ class User(db.Model):
         db.Text,
     )
 
-    ## Images?
+    image_url = db.Column(
+        db.Text,
+        default=DEFAULT_PROFILE_PIC
+    )
 
+    messages = db.relationship('Message', order_by='Message.timestamp.desc()',
+                                                cascade="all,delete")
+
+    matches = db.relationship(
+        "User",
+        secondary="matches",
+        primaryjoin=(Match.username_1_matching == username),
+        secondaryjoin=(Match.username_2_matching == username)
+    )
+
+    rejects = db.relationship(
+        "User",
+        secondary="rejects",
+        primaryjoin=(Reject.user_rejecting == username),
+        secondaryjoin=(Reject.user_rejected == username)
+    )
 
     def __repr__(self):
         return f"<User {self.username}: {self.email}>"
@@ -145,6 +206,48 @@ class User(db.Model):
         except jwt.InvalidTokenError:
             return 'Invalid token. Please log in again.'
 
+
+############## MESSAGES MODEL ###########################
+
+class Message(db.Model):
+    """ Messages in the system. """
+
+    __tablename__ = 'messages'
+
+    id = db.Column(
+         db.Integer,
+        primary_key=True,
+    )
+
+    sender_username = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username', ondelete='CASCADE'),
+        nullable=False,
+    )
+
+    receiver_username = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username', ondelete='CASCADE'),
+        nullable=False,
+    )
+
+
+    text = db.Column(
+        db.String(140),
+        nullable=False,
+    )
+
+    timestamp = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+
+    user = db.relationship('User')
+
+    def __repr__(self):
+        return f"<Message #{self.id}: {self.text}, {self.timestamp}, {self.sender_username}, {self.receiver_username}>"
 
 
 ############################connect-db############################

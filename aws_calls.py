@@ -2,8 +2,6 @@ import os
 import boto3
 
 
-
-
 s3 = boto3.client(
   "s3",
   "us-west-1",
@@ -11,5 +9,6 @@ s3 = boto3.client(
   aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
 )
 
-s3.upload_file('brown_dog.jpeg', 'r25-friender', 'brown_dog.jpg')
+s3.upload_file('brown_dog.jpeg', 'r25-friender-melaus', 'brown_dog.jpg',
+ExtraArgs={"ContentType": 'image/jpeg', "ContentDisposition": 'inline', "ACL": 'public-read'})
 
