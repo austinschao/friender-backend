@@ -1,13 +1,12 @@
-from crypt import methods
 import os
 # os.urandom(24)
 
-# from flask_jwt import JWT, jwt_required, current_identity
+from flask_jwt import JWT, jwt_required
+from flask_jwt_extended import get_jwt_identity
 from flask import Flask, jsonify, request, make_response
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from models import User, db, connect_db
-import json
 
 app = Flask(__name__)
 
@@ -17,6 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
+
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
@@ -54,9 +54,8 @@ def signup():
         return (jsonify({"error": "Duplicate Username/Email"}), 400)
 
 
-
     if user.username:
-        token = str(user.encode_auth_token(user.username), "UTF-8")
+        token = user.encode_auth_token(user.username)
         serialized = user.serialize_token(token)
 
         return (jsonify(serialized), 201)
@@ -72,7 +71,7 @@ def login():
 
 
     if user:
-        token = str(user.encode_auth_token(user.username), "UTF-8")
+        token = user.encode_auth_token(user.username)
         serialized = user.serialize_token(token)
 
         return (jsonify(serialized), 200)
@@ -80,3 +79,26 @@ def login():
     else:
         return (jsonify({"error": "Invalid Username/Password"}), 400)
 
+##############################################################################
+# General user routes:
+
+@app.get('/users/<username>')
+def getUser(username):
+    """ Get information about a user --> details, matches, rejects"""
+    try:
+        token = request.headers["token"]
+
+        token_username = User.decode_auth_token(token)
+
+        print("TOKEN USERNAME", token_username, "username", username)
+
+        if username == token_username:
+            user = User.query.get_or_404(username)
+            serialized = user.serialize
+
+            return (jsonify(serialized), 200)
+
+    except KeyError:
+        return (jsonify({"error": "Unauthorized. No token provided."}), 401)
+
+    return "hi"

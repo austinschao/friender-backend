@@ -3,7 +3,7 @@
 import os
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-# from flask_jwt import JWT, jwt_required, current_identity
+from flask_jwt import JWT, jwt_required, current_identity
 import jwt
 from datetime import datetime, timedelta
 
@@ -21,13 +21,13 @@ class Match(db.Model):
 
     __tablename__ = 'matches'
 
-    username_1_matching = db.Column(
+    user = db.Column(
         db.String(20),
         db.ForeignKey('users.username', ondelete="CASCADE"),
         primary_key=True,
     )
 
-    username_2_matching = db.Column(
+    match = db.Column(
         db.String(20),
         db.ForeignKey('users.username', ondelete="CASCADE"),
         primary_key=True,
@@ -41,13 +41,13 @@ class Reject(db.Model):
 
     __tablename__ = 'rejects'
 
-    user_rejecting = db.Column(
+    user = db.Column(
         db.String(20),
         db.ForeignKey('users.username', ondelete="CASCADE"),
         primary_key=True,
     )
 
-    user_rejected = db.Column(
+    rejected = db.Column(
         db.String(20),
         db.ForeignKey('users.username', ondelete="CASCADE"),
         primary_key=True,
@@ -66,13 +66,13 @@ class Message(db.Model):
         primary_key=True,
     )
 
-    sender_username = db.Column(
+    sender = db.Column(
         db.String(20),
         db.ForeignKey('users.username', ondelete='CASCADE'),
         nullable=False,
     )
 
-    receiver_username = db.Column(
+    receiver = db.Column(
         db.String(20),
         db.ForeignKey('users.username', ondelete='CASCADE'),
         nullable=False,
@@ -88,9 +88,6 @@ class Message(db.Model):
         nullable=False,
         default=datetime.utcnow,
     )
-
-
-    # user = db.relationship('User')
 
     def __repr__(self):
         return f"<Message #{self.id}: {self.text}, {self.timestamp}, {self.sender_username}, {self.receiver_username}>"
@@ -151,46 +148,31 @@ class User(db.Model):
 
     messages_sent = db.relationship('User',
                                 secondary="messages",
-                                primaryjoin=(Message.sender_username == username),
-                                secondaryjoin=(Message.receiver_username == username),
+                                primaryjoin=(Message.sender == username),
+                                secondaryjoin=(Message.receiver == username),
                                 order_by='Message.timestamp.desc()',
                                 cascade="all,delete")
 
     messages_received = db.relationship('User',
                                 secondary="messages",
-                                primaryjoin=(Message.receiver_username == username),
-                                secondaryjoin=(Message.sender_username == username),
+                                primaryjoin=(Message.receiver == username),
+                                secondaryjoin=(Message.sender == username),
                                 order_by='Message.timestamp.desc()',
                                 cascade="all,delete")
 
-    # Matched?
-    matches = db.relationship(
+
+    match = db.relationship(
         "User",
         secondary="matches",
-        primaryjoin=(Match.username_1_matching == username),
-        secondaryjoin=(Match.username_2_matching == username)
+        primaryjoin=(Match.user == username),
+        secondaryjoin=(Match.match == username)
     )
-
-
-    #matches_sent
-    # u1 -> u2
-    # u2 -> u1
-
-    #matches_received
-    # u2 <- u1
-    # u1 -> u2
-
-    #if both match each other, add them to the matched table???
-
-
-
-
 
     rejects = db.relationship(
         "User",
         secondary="rejects",
-        primaryjoin=(Reject.user_rejecting == username),
-        secondaryjoin=(Reject.user_rejected == username)
+        primaryjoin=(Reject.user == username),
+        secondaryjoin=(Reject.rejected == username)
     )
 
     def __repr__(self):
@@ -201,6 +183,19 @@ class User(db.Model):
 
         return {
             "token": token
+        }
+
+    def serialize_user(self):
+        """ Serialize user to dictionary"""
+        return {
+            "username" : self.username,
+            "first_name" : self.first_name,
+            "last_name" : self.last_name,
+            "email" : self.email,
+            "location" : self.location,
+            "hobbies" : self.hobbies,
+            "interests" : self.interests,
+            "image_url" : self.image_url
         }
 
     @classmethod
@@ -271,12 +266,18 @@ class User(db.Model):
         """
 
         try:
+            print("auth token , secret key", auth_token, os.environ['SECRET_KEY'])
             payload = jwt.decode(auth_token, os.environ['SECRET_KEY'])
+            print("PAYLOAD", payload, payload['sub'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
             return 'Signature expired. Please log in again.'
         except jwt.InvalidTokenError:
             return 'Invalid token. Please log in again.'
+
+
+
+
 
 
 
