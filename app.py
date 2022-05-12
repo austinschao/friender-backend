@@ -4,10 +4,11 @@ from flask import Flask, jsonify, request
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
-from models import User, db, connect_db, Match, Reject, DEFAULT_PROFILE_PIC
+from models import User, db, connect_db, Match, Reject, Message, DEFAULT_PROFILE_PIC
 from datetime import timedelta
 import pgeocode
-from aws_calls import upload_image_and_get_url
+# from aws_calls import upload_image_and_get_url
+
 
 app = Flask(__name__)
 
@@ -136,31 +137,39 @@ def getUserMatches(username):
 
     if curr_user == username:
         user = User.query.get_or_404(username)
+
+        # List of usernames curr user rejected
         rejects = [ user.username for user in user.rejects ]
 
-    ### if match , check if other user matched and add to appropriate array
+        # List of users that curr user wants to match with
         match_users = [ user for user in user.matches ]
+
+        # List of usernames that curr user is actually matched with
         matched = []
+        matched_full = []
+
+        # List of usernames that curr user wants to match with but has not matched them back
         match_requests = []
 
 
-        #list comp. returns booleans for each username whether they have matched curr user or not
+        # Checks if curr user is matched or still waiting for other to match back
         for other_user in match_users:
             if user in other_user.matches:
                 matched.append(other_user.username)
+                matched_full.append(other_user.serialize_user())
             else:
                 match_requests.append(other_user.username)
 
-        #query all users, do list comprehension check conditional for distance
-        #if user is not in rejects and not match_requests or match, add to list
+
+        # List of all usernames that should not be shown to curr user
         not_shown_users = [*match_requests, *rejects, *matched, curr_user]
 
-        #Potential_users => user instances
+        # Potential list of all users
         potential_users = User.query.filter(User.username.not_in(not_shown_users)).all()
 
-        # Checks for users within 100 miles converted to km
-        potential_users_by_distance = [other_user.username for other_user in potential_users if dist.query_postal_code(user.location, other_user.location) <= 161]
-        return (jsonify({"matched": matched, "potential_users": potential_users_by_distance  }), 200)
+        # Potential list of all users within 100 mi converted to km
+        potential_users_by_distance = [other_user.serialize_user() for other_user in potential_users if dist.query_postal_code(user.location, other_user.location) <= 161]
+        return (jsonify({"matched": matched_full, "potential_users": potential_users_by_distance  }), 200)
 
     else:
         return (jsonify({"error": "Unauthorized. "}), 401)
@@ -240,4 +249,15 @@ def updateUser(username):
 
 ### post send a message
 
-### delete user
+# @app.post('/users<username>/messages')
+# @jwt_required()
+# def addMessage(username):
+#     """ Add a message """
+
+#     curr_user = get_jwt_identity()
+
+#     if curr_user == username:
+
+
+
+# ### delete user

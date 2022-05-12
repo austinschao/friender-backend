@@ -1,9 +1,12 @@
 
 import os
+from flask import send_from_directory
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import jwt_required, JWTManager
 from datetime import datetime, timedelta
+
+from sqlalchemy import ForeignKey
 
 bcrypt = Bcrypt()
 jwt = JWTManager()
@@ -145,19 +148,24 @@ class User(db.Model):
         default=DEFAULT_PROFILE_PIC
     )
 
-    messages_sent = db.relationship('User',
-                                secondary="messages",
-                                primaryjoin=(Message.sender == username),
-                                secondaryjoin=(Message.receiver == username),
-                                order_by='Message.timestamp.desc()',
-                                cascade="all,delete")
+    # messages_sent = db.relationship('User',
+    #                             secondary="messages",
+    #                             primaryjoin=(Message.sender == username),
+    #                             secondaryjoin=(Message.receiver == username),
+    #                             order_by='Message.timestamp.desc()',
+    #                             cascade="all,delete")
 
-    messages_received = db.relationship('User',
-                                secondary="messages",
-                                primaryjoin=(Message.receiver == username),
-                                secondaryjoin=(Message.sender == username),
-                                order_by='Message.timestamp.desc()',
-                                cascade="all,delete")
+    # messages_received = db.relationship('User',
+    #                             secondary="messages",
+    #                             primaryjoin=(Message.receiver == username),
+    #                             secondaryjoin=(Message.sender == username),
+    #                             order_by='Message.timestamp.desc()',
+    #                             cascade="all,delete")
+
+    messages_sent = db.relationship('Message', foreign_keys=[Message.sender])
+    messages_received = db.relationship('Message', foreign_keys=[Message.receiver])
+    # messages = db.relationship('Message', foreign_keys=[Message.sender, Message.receiver])
+
 
 
     matches = db.relationship(
