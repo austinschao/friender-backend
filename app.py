@@ -6,7 +6,8 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from models import User, db, connect_db, Match, Reject, DEFAULT_PROFILE_PIC
 from datetime import timedelta
-
+import pgeocode
+from aws_calls import upload_image_and_get_url
 
 app = Flask(__name__)
 
@@ -24,6 +25,8 @@ app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
 jwt = JWTManager(app)
 toolbar = DebugToolbarExtension(app)
+
+dist = pgeocode.GeoDistance('us')
 
 connect_db(app)
 
@@ -107,6 +110,8 @@ def login():
 @jwt_required()
 def getUser(username):
     """ Get information about a user --> details, matches, rejects"""
+    """ On mount, we will get a user
+        Need their info, people they matched with, """
 
     curr_user = get_jwt_identity()
 
@@ -134,18 +139,28 @@ def getUserMatches(username):
         rejects = [ user.username for user in user.rejects ]
 
     ### if match , check if other user matched and add to appropriate array
-
-        matchUsers = [ user for user in user.matches ]
+        match_users = [ user for user in user.matches ]
         matched = []
-        matchRequests = []
+        match_requests = []
+
+
         #list comp. returns booleans for each username whether they have matched curr user or not
-        for other_user in matchUsers:
+        for other_user in match_users:
             if user in other_user.matches:
                 matched.append(other_user.username)
             else:
-                matchRequests.append(other_user.username)
+                match_requests.append(other_user.username)
 
-        return (jsonify({"rejects": rejects, "matchRequests": matchRequests, "matched": matched  }), 200)
+        #query all users, do list comprehension check conditional for distance
+        #if user is not in rejects and not match_requests or match, add to list
+        not_shown_users = [*match_requests, *rejects, *matched, curr_user]
+
+        #Potential_users => user instances
+        potential_users = User.query.filter(User.username.not_in(not_shown_users)).all()
+
+        # Checks for users within 100 miles converted to km
+        potential_users_by_distance = [other_user.username for other_user in potential_users if dist.query_postal_code(user.location, other_user.location) <= 161]
+        return (jsonify({"matched": matched, "potential_users": potential_users_by_distance  }), 200)
 
     else:
         return (jsonify({"error": "Unauthorized. "}), 401)
@@ -200,15 +215,20 @@ def updateUser(username):
         profile_pic updates to default if user removes.
     """
 
+
+
     curr_user = get_jwt_identity()
 
     if curr_user == username:
+        breakpoint()
         user = User.query.get_or_404(username)
         user.first_name = request.json["first_name"] or user.first_name,
         user.last_name = request.json["last_name"] or user.last_name,
         user.email = request.json["email"] or user.email,
         # we need the url from aws
+
         user.image_url = request.json["image_url"] or DEFAULT_PROFILE_PIC,
+
         user.hobbies = request.json["hobbies"]
         user.interests = request.json["interests"]
 
