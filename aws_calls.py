@@ -2,7 +2,7 @@ import os
 import boto3
 
 ALLOWED_EXTENSIONS = set([ 'png', 'jpg', 'jpeg'])
-BASE_URL = "https://r25-friender-melaus.s3.us-west-1.amazonaws.com"
+BASE_URL = f"https://{os.environ['AWS_BUCKET']}.s3.us-west-1.amazonaws.com"
 
 s3 = boto3.client(
   "s3",
