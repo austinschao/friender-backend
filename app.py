@@ -28,23 +28,24 @@ toolbar = DebugToolbarExtension(app)
 connect_db(app)
 
 
-# def identity(payload):
-#     username = payload['identity']
-#     return User.get(username, None)
 
-# Register a callback function that takes whatever object is passed in as the
-# identity when creating JWTs and converts it to a JSON serializable format.
 @jwt.user_identity_loader
 def user_identity_lookup(user):
+    """ Register a callback fn that takes whatever obj that is passed in
+        as the identity when creating JWTs and converts it to a JSON
+        serializable format """
+
     print("user", user)
     return user
 
-# Register a callback function that loads a user from your database whenever
-# a protected route is accessed. This should return any python object on a
-# successful lookup, or None if the lookup failed for any reason (for example
-# if the user has been deleted from the database).
+
 @jwt.user_lookup_loader
 def user_lookup_callback(_jwt_header, jwt_data):
+    """ Register a callback function that loads a user from your database
+        whenever a protected route is accessed. This should return any python
+        object on a successful lookup, or None if the lookup failed for any
+        reason (for example if the user has been deleted from the database)."""
+
     identity = jwt_data["sub"]
     return User.query.filter_by(username=identity).one_or_none()
 
@@ -78,8 +79,8 @@ def signup():
 
 
     if user.username:
-        access_token = create_access_token(identity=user.username)
-        return (jsonify(access_token=access_token), 201)
+        token = create_access_token(identity=user.username)
+        return (jsonify(token=token), 201)
 
 
 @app.route('/login', methods=["POST"])
@@ -91,9 +92,11 @@ def login():
         password=request.json["password"]
     )
 
+    # breakpoint()
+
     if user:
-        access_token = create_access_token(identity=user.username)
-        return (jsonify(access_token=access_token), 200)
+        token = create_access_token(identity=user.username)
+        return (jsonify(token=token), 200)
 
     else:
         return (jsonify({"error": "Invalid Username/Password"}), 400)
@@ -104,13 +107,10 @@ def login():
 @app.get('/users/<username>')
 @jwt_required()
 def getUser(username):
-
-    # print(app.config, "CONFIG")
-    curr_user = get_jwt_identity()
-    print(curr_user)
-
     """ Get information about a user --> details, matches, rejects"""
-    print("CURR USER", current_user)
+
+    curr_user = get_jwt_identity()
+
     if curr_user == username:
         user = User.query.get_or_404(username)
         match = Match.query.filter_by(user=username)
