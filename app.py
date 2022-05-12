@@ -1,10 +1,10 @@
 import os
 # os.urandom(24)
-from flask import Flask, jsonify, request, make_response
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager, current_user
+from flask import Flask, jsonify, request
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
-from models import User, db, connect_db, Match
+from models import User, db, connect_db, Match, Reject, DEFAULT_PROFILE_PIC
 from datetime import timedelta
 
 
@@ -35,7 +35,6 @@ def user_identity_lookup(user):
         as the identity when creating JWTs and converts it to a JSON
         serializable format """
 
-    print("user", user)
     return user
 
 
@@ -114,13 +113,111 @@ def getUser(username):
     if curr_user == username:
         user = User.query.get_or_404(username)
         match = Match.query.filter_by(user=username)
-        print(match)
         serialized = user.serialize_user()
 
         return (jsonify(serialized), 200)
 
     else:
-        return (jsonify({"error": "Unauthorized. No token provided."}), 401)
+        return (jsonify({"error": "Unauthorized. Incorrect token."}), 401)
+
+### get matches/hope_match/reject within radius
+@app.get('/users/<username>/lists')
+@jwt_required()
+def getUserMatches(username):
+    """ Gets a user lists of completed matches, hope to match, and rejected
+        within given radius
+    """
+    curr_user = get_jwt_identity()
+
+    if curr_user == username:
+        user = User.query.get_or_404(username)
+        rejects = [ user.username for user in user.rejects ]
+
+    ### if match , check if other user matched and add to appropriate array
+
+        matchUsers = [ user for user in user.matches ]
+        matched = []
+        matchRequests = []
+        #list comp. returns booleans for each username whether they have matched curr user or not
+        for other_user in matchUsers:
+            if user in other_user.matches:
+                matched.append(other_user.username)
+            else:
+                matchRequests.append(other_user.username)
+
+        return (jsonify({"rejects": rejects, "matchRequests": matchRequests, "matched": matched  }), 200)
+
+    else:
+        return (jsonify({"error": "Unauthorized. "}), 401)
 
 
+@app.post('/users/<username>/match')
+@jwt_required()
+def matchUser(username):
+    """ Adds a user to current user's match list in database """
 
+    curr_user = get_jwt_identity()
+
+    if curr_user == username:
+        user = User.query.get_or_404(username)
+        match = User.query.get_or_404(request.json["username"])
+
+        newMatch = Match(user=user.username,match=match.username)
+        db.session.add(newMatch)
+        db.session.commit()
+
+        return (jsonify({"success": "match added!"}), 200)
+
+    else:
+        return (jsonify({"error": "Unauthorized."}), 401)
+
+@app.post('/users/<username>/reject')
+@jwt_required()
+def rejectUser(username):
+    """ Adds a user to current user's reject list in database """
+
+    curr_user = get_jwt_identity()
+
+    if curr_user == username:
+        user = User.query.get_or_404(username)
+        rejected = User.query.get_or_404(request.json["username"])
+
+        newReject = Reject(user=user.username,rejected=rejected.username)
+        db.session.add(newReject)
+        db.session.commit()
+
+        return (jsonify({"success": "reject added!"}), 200)
+
+    else:
+        return (jsonify({"error": "Unauthorized."}), 401)
+
+@app.patch('/users/<username>')
+@jwt_required()
+def updateUser(username):
+    """ Updates a user's current info.
+        first_name, last_name and email default to original if user tries
+        to remove.
+        profile_pic updates to default if user removes.
+    """
+
+    curr_user = get_jwt_identity()
+
+    if curr_user == username:
+        user = User.query.get_or_404(username)
+        user.first_name = request.json["first_name"] or user.first_name,
+        user.last_name = request.json["last_name"] or user.last_name,
+        user.email = request.json["email"] or user.email,
+        # we need the url from aws
+        user.image_url = request.json["image_url"] or DEFAULT_PROFILE_PIC,
+        user.hobbies = request.json["hobbies"]
+        user.interests = request.json["interests"]
+
+        db.session.commit()
+        return (jsonify({"success": "user updated!"}), 200)
+
+    else:
+        return (jsonify({"error": "Unauthorized."}), 401)
+
+### post send a message
+
+### delete user

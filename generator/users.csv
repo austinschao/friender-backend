@@ -1,6 +1,6 @@
 username,password,email,first_name,last_name,location
-melaniewong,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,mela@hi.com,melanie,wong,85042
-austinchao,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,austin@hi.net,austin,chao,91030
+melaniewong,$2b$12$password,mela@hi.com,melanie,wong,85042
+austinchao,$2b$12$password,austin@hi.net,austin,chao,91030
 kadeembest,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,kadeem@hi.com,kadeem,best,91031
 natelipp,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,nate@hi.com,nate,lipp,91030
 elieschoppik,$2b$12$Q1PUFjhN/AWRQ21LbGYvjeLpZZB6lfZ1BPwifHALGO6oIbyC3CmJe,elie@hi.com,elie,schoppik,91030
