@@ -1,13 +1,12 @@
 
-# from app import app
 import os
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt import JWT, jwt_required, current_identity
-import jwt
+from flask_jwt_extended import jwt_required, JWTManager
 from datetime import datetime, timedelta
 
 bcrypt = Bcrypt()
+jwt = JWTManager()
 db = SQLAlchemy()
 
 DEFAULT_PROFILE_PIC = "./static/images/default-pic.png"
@@ -178,12 +177,6 @@ class User(db.Model):
     def __repr__(self):
         return f"<User {self.username}: {self.email}>"
 
-    def serialize_token(self, token):
-        """ Serialize to dictionary """
-
-        return {
-            "token": token
-        }
 
     def serialize_user(self):
         """ Serialize user to dictionary"""
@@ -197,6 +190,21 @@ class User(db.Model):
             "interests" : self.interests,
             "image_url" : self.image_url
         }
+
+    # Register a callback function that takes whatever object is passed in as the
+    # identity when creating JWTs and converts it to a JSON serializable format.
+    # @jwt.user_identity_loader
+    def user_identity_lookup(user):
+        return user
+
+    # Register a callback function that loads a user from your database whenever
+    # a protected route is accessed. This should return any python object on a
+    # successful lookup, or None if the lookup failed for any reason (for example
+    # if the user has been deleted from the database).
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        identity = jwt_data["sub"]
+        return User.query.filter_by(username=identity).one_or_none()
 
     @classmethod
     def signup(cls, username, first_name, last_name, email, password, location):
@@ -237,44 +245,6 @@ class User(db.Model):
                 return user
 
         return False
-
-    def encode_auth_token(self, username):
-        """ Generates the Auth Token
-            :return: string
-        """
-
-        try:
-            payload = {
-                'exp': datetime.utcnow() + timedelta(days=0, minutes=60),
-                'iat': datetime.utcnow(),
-                'sub': username
-            }
-            return jwt.encode(
-                payload,
-                os.environ['SECRET_KEY'],
-                algorithm='HS256'
-            )
-        except Exception as e:
-            return e
-
-    @staticmethod
-    def decode_auth_token(auth_token):
-        """
-        Decodes the auth token
-        :param auth_token:
-        :return: integer|string
-        """
-
-        try:
-            print("auth token , secret key", auth_token, os.environ['SECRET_KEY'])
-            payload = jwt.decode(auth_token, os.environ['SECRET_KEY'])
-            print("PAYLOAD", payload, payload['sub'])
-            return payload['sub']
-        except jwt.ExpiredSignatureError:
-            return 'Signature expired. Please log in again.'
-        except jwt.InvalidTokenError:
-            return 'Invalid token. Please log in again.'
-
 
 
 
