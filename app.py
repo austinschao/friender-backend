@@ -6,9 +6,11 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from models import User, db, connect_db, Match, Reject, Message, DEFAULT_PROFILE_PIC
 from datetime import timedelta
+from werkzeug.utils import secure_filename
 import pgeocode
-# from aws_calls import upload_image_and_get_url
+from aws_calls import upload_image_and_get_url, allowed_file
 
+UPLOAD_FOLDER = './upload_folder'
 
 app = Flask(__name__)
 
@@ -23,11 +25,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
 
 jwt = JWTManager(app)
 toolbar = DebugToolbarExtension(app)
 
 dist = pgeocode.GeoDistance('us')
+
 
 connect_db(app)
 
@@ -170,6 +175,41 @@ def getUserMatches(username):
         # Potential list of all users within 100 mi converted to km
         potential_users_by_distance = [other_user.serialize_user() for other_user in potential_users if dist.query_postal_code(user.location, other_user.location) <= 161]
         return (jsonify({"matched": matched_full, "potential_users": potential_users_by_distance  }), 200)
+
+    else:
+        return (jsonify({"error": "Unauthorized. "}), 401)
+
+@app.route('/users/<username>/upload', methods=['POST'])
+@jwt_required()
+def uploadPhoto(username):
+    """ Uploads photo file to temp storage, then AWS, then deletes from
+    temp storage, updates database with AWS url
+    """
+
+    curr_user = get_jwt_identity()
+    if curr_user == username:
+        user = User.query.get_or_404(username)
+
+        if 'file' not in request.files:
+            return (jsonify({"error": "No file found. "}), 400)
+
+        file = request.files['file']
+        if file.filename == "":
+            return (jsonify({"error": "No filename found. "}), 400)
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+            url = upload_image_and_get_url(f"./upload_folder/{filename}", username)
+            user.image_url = url
+
+            db.session.commit()
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+            return (jsonify({"success" : "user image added. "}), 200)
+        else:
+            return (jsonify({"error": "Invalid file type. "}), 400)
 
     else:
         return (jsonify({"error": "Unauthorized. "}), 401)
