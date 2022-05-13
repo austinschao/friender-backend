@@ -65,6 +65,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
 ##### USER SIGN UP AND LOGIN #####
 
 @app.route('/signup', methods=["POST"])
+@cross_origin()
 def signup():
     """Handle user signup.
 
@@ -84,7 +85,6 @@ def signup():
 
         db.session.commit()
 
-    # Return a better error message!!!
     except IntegrityError:
         return (jsonify({"error": "Duplicate Username/Email"}), 400)
 
@@ -95,6 +95,7 @@ def signup():
 
 
 @app.route('/login', methods=["POST"])
+@cross_origin()
 def login():
     """ Handle user login and return a token """
 
@@ -196,8 +197,9 @@ def uploadPhoto(username):
 
         if 'file' not in request.files:
             return (jsonify({"error": "No file found. "}), 400)
-
         file = request.files['file']
+
+        print("FILE", file)
         if file.filename == "":
             return (jsonify({"error": "No filename found. "}), 400)
 
