@@ -9,11 +9,14 @@ from datetime import timedelta
 from werkzeug.utils import secure_filename
 import pgeocode
 from aws_calls import upload_image_and_get_url, allowed_file
+from flask_cors import CORS, cross_origin
 
 UPLOAD_FOLDER = './upload_folder'
 
 app = Flask(__name__)
+CORS(app, resources={r"*": {"origins": "*"}})
 
+app.config['CORS_HEADERS'] = ['Content-Type','Authorization']
 app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 app.config["JWT_COOKIE_SECURE"] = False
 app.config["JWT_SECRET_KEY"] = os.environ['SECRET_KEY']
@@ -78,7 +81,7 @@ def signup():
             email=request.json["email"],
             location=request.json["location"]
         )
-        print("user", user.username)
+
         db.session.commit()
 
     # Return a better error message!!!
@@ -100,8 +103,6 @@ def login():
         password=request.json["password"]
     )
 
-    # breakpoint()
-
     if user:
         token = create_access_token(identity=user.username)
         return (jsonify(token=token), 200)
@@ -113,6 +114,7 @@ def login():
 # General user routes:
 
 @app.get('/users/<username>')
+@cross_origin()
 @jwt_required()
 def getUser(username):
     """ Get information about a user --> details, matches, rejects"""
@@ -133,6 +135,7 @@ def getUser(username):
 
 ### get matches/hope_match/reject within radius
 @app.get('/users/<username>/lists')
+@cross_origin()
 @jwt_required()
 def getUserMatches(username):
     """ Gets a user lists of completed matches, hope to match, and rejected
@@ -180,6 +183,7 @@ def getUserMatches(username):
         return (jsonify({"error": "Unauthorized. "}), 401)
 
 @app.route('/users/<username>/upload', methods=['POST'])
+@cross_origin()
 @jwt_required()
 def uploadPhoto(username):
     """ Uploads photo file to temp storage, then AWS, then deletes from
@@ -216,6 +220,7 @@ def uploadPhoto(username):
 
 
 @app.post('/users/<username>/match')
+@cross_origin()
 @jwt_required()
 def matchUser(username):
     """ Adds a user to current user's match list in database """
@@ -236,6 +241,7 @@ def matchUser(username):
         return (jsonify({"error": "Unauthorized."}), 401)
 
 @app.post('/users/<username>/reject')
+@cross_origin()
 @jwt_required()
 def rejectUser(username):
     """ Adds a user to current user's reject list in database """
@@ -256,6 +262,7 @@ def rejectUser(username):
         return (jsonify({"error": "Unauthorized."}), 401)
 
 @app.patch('/users/<username>')
+@cross_origin()
 @jwt_required()
 def updateUser(username):
     """ Updates a user's current info.
@@ -263,21 +270,13 @@ def updateUser(username):
         to remove.
         profile_pic updates to default if user removes.
     """
-
-
-
     curr_user = get_jwt_identity()
 
     if curr_user == username:
-        breakpoint()
         user = User.query.get_or_404(username)
         user.first_name = request.json["first_name"] or user.first_name,
         user.last_name = request.json["last_name"] or user.last_name,
         user.email = request.json["email"] or user.email,
-        # we need the url from aws
-
-        user.image_url = request.json["image_url"] or DEFAULT_PROFILE_PIC,
-
         user.hobbies = request.json["hobbies"]
         user.interests = request.json["interests"]
 
@@ -288,6 +287,9 @@ def updateUser(username):
         return (jsonify({"error": "Unauthorized."}), 401)
 
 ### post send a message
+
+### TODO: make image update route
+# user.image_url = request.json["image_url"] or DEFAULT_PROFILE_PIC,
 
 # @app.post('/users<username>/messages')
 # @jwt_required()
