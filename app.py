@@ -290,18 +290,5 @@ def updateUser(username):
 
 ### post send a message
 
-### TODO: make image update route
-# user.image_url = request.json["image_url"] or DEFAULT_PROFILE_PIC,
-
-# @app.post('/users<username>/messages')
-# @jwt_required()
-# def addMessage(username):
-#     """ Add a message """
-
-#     curr_user = get_jwt_identity()
-
-#     if curr_user == username:
-
-
 
 # ### delete user
