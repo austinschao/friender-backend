@@ -12,7 +12,7 @@ bcrypt = Bcrypt()
 jwt = JWTManager()
 db = SQLAlchemy()
 
-DEFAULT_PROFILE_PIC = "./static/images/default-pic.png"
+DEFAULT_PROFILE_PIC = "https://r25-friender.s3.us-west-1.amazonaws.com/default-pic.png"
 
 """SQLAlchemy models for Friender."""
 
