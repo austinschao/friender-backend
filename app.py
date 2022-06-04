@@ -88,7 +88,7 @@ def signup():
             hobbies=request.json["hobbies"],
             interests=request.json['interests']
         )
-        breakpoint()
+
         db.session.commit()
 
     except IntegrityError:
@@ -109,10 +109,9 @@ def login():
         username=request.json["username"],
         password=request.json["password"]
     )
-    breakpoint()
+
     if user:
         token = create_access_token(identity=user.username)
-        breakpoint()
         return (jsonify(token=token), 200)
 
     else:
@@ -233,10 +232,10 @@ def uploadPhoto(username):
 @jwt_required()
 def matchUser(username):
     """ Adds a user to current user's match list in database """
-
     curr_user = get_jwt_identity()
 
     if curr_user == username:
+        breakpoint()
         user = User.query.get_or_404(username)
         match = User.query.get_or_404(request.json["username"])
 
