@@ -1,7 +1,10 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import boto3
 
-ALLOWED_EXTENSIONS = set(['jpeg'])
+ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png'])
 BASE_URL = f"https://{os.environ['AWS_BUCKET']}.s3.us-west-1.amazonaws.com"
 
 s3 = boto3.client(
