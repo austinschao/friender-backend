@@ -84,7 +84,9 @@ def signup():
             last_name=request.json["last_name"],
             email=request.json["email"],
             location=request.json["location"],
-            friend_radius=int(request.json["friend_radius"])
+            friend_radius=int(request.json["friend_radius"]),
+            hobbies=request.json["hobbies"],
+            interests=request.json['interests']
         )
         breakpoint()
         db.session.commit()
@@ -107,9 +109,10 @@ def login():
         username=request.json["username"],
         password=request.json["password"]
     )
-
+    breakpoint()
     if user:
         token = create_access_token(identity=user.username)
+        breakpoint()
         return (jsonify(token=token), 200)
 
     else:
