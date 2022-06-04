@@ -1,5 +1,7 @@
 import os
-# os.urandom(24)
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, jsonify, request
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 from flask_debugtoolbar import DebugToolbarExtension
@@ -10,6 +12,7 @@ from werkzeug.utils import secure_filename
 import pgeocode
 from aws_calls import upload_image_and_get_url, allowed_file
 from flask_cors import CORS, cross_origin
+
 
 UPLOAD_FOLDER = './upload_folder'
 
@@ -80,9 +83,10 @@ def signup():
             first_name=request.json["first_name"],
             last_name=request.json["last_name"],
             email=request.json["email"],
-            location=request.json["location"]
+            location=request.json["location"],
+            friend_radius=int(request.json["friend_radius"])
         )
-
+        breakpoint()
         db.session.commit()
 
     except IntegrityError:
@@ -177,7 +181,7 @@ def getUserMatches(username):
         potential_users = User.query.filter(User.username.not_in(not_shown_users)).all()
 
         # Potential list of all users within 100 mi converted to km
-        potential_users_by_distance = [other_user.serialize_user() for other_user in potential_users if dist.query_postal_code(user.location, other_user.location) <= 161]
+        potential_users_by_distance = [other_user.serialize_user() for other_user in potential_users if dist.query_postal_code(user.location, other_user.location) <= user.friend_radius]
         return (jsonify({"matched": matched_full, "potential_users": potential_users_by_distance  }), 200)
 
     else:
@@ -281,6 +285,9 @@ def updateUser(username):
         user.email = request.json["email"] or user.email,
         user.hobbies = request.json["hobbies"]
         user.interests = request.json["interests"]
+        user.location = request.json["location"] or user.location
+        user.friend_radius = int(request.json["friend_radius"]) or user.friend_radius
+
 
         db.session.commit()
         return (jsonify({"success": "user updated!"}), 200)
