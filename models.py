@@ -106,6 +106,11 @@ class User(db.Model):
         primary_key=True
     )
 
+    password = db.Column(
+        db.Text,
+        nullable=False,
+    )
+
     email = db.Column(
         db.Text,
         nullable=False,
@@ -122,11 +127,6 @@ class User(db.Model):
         nullable=False,
     )
 
-    password = db.Column(
-        db.Text,
-        nullable=False,
-    )
-
     location = db.Column(
         db.Text,
         nullable=False
@@ -138,11 +138,13 @@ class User(db.Model):
     )
 
     hobbies = db.Column(
-        db.Text
+        db.Text,
+        nullable=False
     )
 
     interests = db.Column(
         db.Text,
+        nullable=False
     )
 
     image_url = db.Column(
@@ -203,7 +205,7 @@ class User(db.Model):
         }
 
     @classmethod
-    def signup(cls, username, first_name, last_name, email, password, location, friend_radius):
+    def signup(cls, username, first_name, last_name, email, password, location, hobbies, interests, friend_radius):
         """Sign up user.
 
         Hashes password and adds user to system.
@@ -218,6 +220,8 @@ class User(db.Model):
             first_name=first_name,
             last_name=last_name,
             location=location,
+            hobbies=hobbies,
+            interests=interests,
             friend_radius=friend_radius
         )
 
