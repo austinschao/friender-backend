@@ -1,12 +1,10 @@
 
-import os
-from flask import send_from_directory
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import jwt_required, JWTManager
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from sqlalchemy import ForeignKey
+
 
 bcrypt = Bcrypt()
 jwt = JWTManager()
@@ -132,7 +130,11 @@ class User(db.Model):
     location = db.Column(
         db.Text,
         nullable=False
-        # validator?
+    )
+
+    friend_radius = db.Column(
+        db.Integer,
+        nullable=False
     )
 
     hobbies = db.Column(
@@ -194,13 +196,14 @@ class User(db.Model):
             "last_name" : self.last_name,
             "email" : self.email,
             "location" : self.location,
+            "friend_radius": self.friend_radius,
             "hobbies" : self.hobbies,
             "interests" : self.interests,
             "image_url" : self.image_url
         }
 
     @classmethod
-    def signup(cls, username, first_name, last_name, email, password, location):
+    def signup(cls, username, first_name, last_name, email, password, location, friend_radius):
         """Sign up user.
 
         Hashes password and adds user to system.
@@ -214,7 +217,8 @@ class User(db.Model):
             password=hashed_pwd,
             first_name=first_name,
             last_name=last_name,
-            location=location
+            location=location,
+            friend_radius=friend_radius
         )
 
         db.session.add(user)
