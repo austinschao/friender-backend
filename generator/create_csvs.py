@@ -6,11 +6,12 @@ from itertools import permutations
 from faker import Faker
 from random import choice, sample
 
-USERS_CSV_HEADERS = ['username','password','email','first_name','last_name','location', 'image_url']
+USERS_CSV_HEADERS = ['username','password','email','first_name','last_name','location','friend_radius','hobbies', 'interests','image_url']
 MATCHES_CSV_HEADERS = ['user_id','match_id']
 NUM_USERS = 300
 NUM_FOLLWERS = 5000
-
+HOBBIES = ['Swimming', 'Running', 'Photography', 'Playing musical instruments', 'Modeling', 'Painting', 'Candy Making', 'Chess', 'Beer Tasting', 'Crossfit', 'Brazillian Jiu Jitsu', 'Coding', 'Video Games', 'Gardening', 'Yoga', 'Judo', 'Comedy Shows', 'Movies']
+INTERESTS = ['Nature', 'History', 'Gaming', 'Travel', 'Art', 'Music', 'Outdoors']
 
 fake = Faker()
 
@@ -34,7 +35,10 @@ with open('generator/users.csv', 'w') as users_csv:
             first_name=fake.first_name(),
             last_name=fake.last_name(),
             location=choice(['94605', '95119', '94540', '94701', '94016', '94509', '94507']),
-            image_url=choice(image_urls)
+            friend_radius=100,
+            hobbies=sample(HOBBIES, 5),
+            interests=sample(INTERESTS,3),
+            image_url=choice(image_urls),
         ))
 
 # Generate matches.csv from random pairings of users
