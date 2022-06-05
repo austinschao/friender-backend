@@ -233,16 +233,12 @@ def uploadPhoto(username):
 def matchUser(username):
     """ Adds a user to current user's match list in database """
     curr_user = get_jwt_identity()
-
     if curr_user == username:
-        breakpoint()
         user = User.query.get_or_404(username)
         match = User.query.get_or_404(request.json["username"])
-
         newMatch = Match(user=user.username,match=match.username)
         db.session.add(newMatch)
         db.session.commit()
-
         return (jsonify({"success": "match added!"}), 200)
 
     else:
