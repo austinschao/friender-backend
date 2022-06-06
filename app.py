@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
@@ -12,9 +12,16 @@ from werkzeug.utils import secure_filename
 import pgeocode
 from aws_calls import upload_image_and_get_url, allowed_file
 from flask_cors import CORS, cross_origin
+from flask.cli import AppGroup
+from twilio.jwt.access_token import AccessToken
+from twilio.jwt.access_token.grants import ChatGrant
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
 
 
 UPLOAD_FOLDER = './upload_folder'
+
+twilio_client = Client()
 
 app = Flask(__name__)
 CORS(app, resources={r"*": {"origins": "*"}})
@@ -42,6 +49,17 @@ dist = pgeocode.GeoDistance('us')
 
 connect_db(app)
 
+""" CHATROOM"""
+chatrooms_cli = AppGroup('chatrooms', help='Manage your chat rooms.')
+app.cli.add_command(chatrooms_cli)
+
+
+@chatrooms_cli.command('list', help='list all chat rooms')
+def list():
+    conversations = twilio_client.conversations.conversations.list()
+    for conversation in conversations:
+        print(f'{conversation.friendly_name} ({conversation.sid})')
+##########################
 
 
 @jwt.user_identity_loader
