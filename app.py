@@ -1,4 +1,6 @@
+from curses.ascii import US
 import os
+import click
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -21,7 +23,7 @@ from twilio.base.exceptions import TwilioRestException
 
 UPLOAD_FOLDER = './upload_folder'
 
-twilio_client = Client()
+twilio_client = Client(region='us1', edge='san francisco')
 
 app = Flask(__name__)
 CORS(app, resources={r"*": {"origins": "*"}})
@@ -48,7 +50,7 @@ dist = pgeocode.GeoDistance('us')
 
 
 connect_db(app)
-
+################################################################################
 """ CHATROOM"""
 chatrooms_cli = AppGroup('chatrooms', help='Manage your chat rooms.')
 app.cli.add_command(chatrooms_cli)
@@ -59,7 +61,35 @@ def list():
     conversations = twilio_client.conversations.conversations.list()
     for conversation in conversations:
         print(f'{conversation.friendly_name} ({conversation.sid})')
-##########################
+
+@chatrooms_cli.command('create', help='create a chat room')
+@click.argument('name')
+def create(name):
+    conversation = None
+    for conv in twilio_client.conversations.conversations.list():
+        if conv.friendly_name == name:
+            conversation = conv
+            break
+    if conversation is not None:
+        print('Chat room already exists')
+    else:
+        twilio_client.conversations.conversations.create(friendly_name=name)
+
+@chatrooms_cli.command('delete', help='delete a chat room')
+@click.argument('name')
+def delete(name):
+    conversation = None
+    for conv in twilio_client.conversations.conversations.list():
+        if conv.friendly_name == name:
+            conversation = conv
+            break
+    if conversation is None:
+        print('Chat room not found')
+    else:
+        conversation.delete()
+
+
+################################################################################
 
 
 @jwt.user_identity_loader
@@ -129,8 +159,42 @@ def login():
     )
 
     if user:
-        token = create_access_token(identity=user.username)
-        return (jsonify(token=token), 200)
+        auth_token = create_access_token(identity=user.username)
+
+
+        # create the user (if it does not exist yet)
+        partipant_role_sid = None
+        for role in twilio_client.conversations.roles.list():
+            if role.friendly_name == 'participant':
+                participant_role_sid = role.sid
+        try:
+            twilio_client.conversations.users.create(identity=user.username, role_sid=participant_role_sid)
+
+        except TwilioRestException as exc:
+            if exc.status != 409:
+                raise
+
+        # add the user to all the conversations
+        conversations = twilio_client.conversations.conversations.list()
+        for conversation in conversations:
+            try:
+                conversation.participants.create(identity=user.username)
+            except TwilioRestException as exc:
+                if exc.status != 409:
+                    raise
+
+        # generate an access token
+        twilio_account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+        twilio_api_key_sid = os.environ.get('TWILIO_API_KEY_SID')
+        twilio_api_key_secret = os.environ.get('TWILIO_API_KEY_SECRET')
+        service_sid = conversations[0].chat_service_sid
+        twilio_token = AccessToken(twilio_account_sid, twilio_api_key_sid,
+                            twilio_api_key_secret, identity=user.username)
+        twilio_token.add_grant(ChatGrant(service_sid=service_sid))
+
+        chatrooms = [[conversation.friendly_name, conversation.sid] for conversation in conversations]
+        breakpoint()
+        return (jsonify(token=auth_token, chatrooms=chatrooms, twilio_token=twilio_token.to_jwt()), 200)
 
     else:
         return (jsonify({"error": "Invalid Username/Password"}), 400)
