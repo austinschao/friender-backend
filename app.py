@@ -23,7 +23,7 @@ from twilio.base.exceptions import TwilioRestException
 
 UPLOAD_FOLDER = './upload_folder'
 
-twilio_client = Client(region='us1', edge='san francisco')
+twilio_client = Client()
 
 app = Flask(__name__)
 CORS(app, resources={r"*": {"origins": "*"}})
