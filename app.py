@@ -60,7 +60,7 @@ dist = pgeocode.GeoDistance('us')
 connect_db(app)
 ################################################################################
 """ SOCKET IO CHAT """
-users = []
+USERS = {}
 
 @cross_origin()
 @jwt_required()
@@ -77,14 +77,23 @@ def handleMessage(msg):
 @socketio.on('message from user', namespace="/messages")
 def receive_message_from_user(message):
     print('USER MESSAGE: {}'.format(message))
-    send('from flask', message.upper(), broadcast=True)
+    socketio.emit('from flask', message.upper(), broadcast=True)
     #emit?#
 @cross_origin()
 @jwt_required()
 @socketio.on('username', namespace="/private")
 def receive_username(username):
-    users.append({username:request.sid})
-    print(users)
+    # USERS.append({username:request.sid})
+    USERS[username] = request.sid
+    print('Username added!', USERS)
+
+@cross_origin()
+@jwt_required()
+@socketio.on('private_message', namespace='/private')
+def private_message(payload):
+    recipient_sid = USERS[payload['username']]
+    message = payload['message']
+    socketio.emit('new_private_message', message, room=recipient_sid)
 
 if __name__ == 'main':
     socketio.run(app)
