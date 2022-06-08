@@ -30,7 +30,8 @@ UPLOAD_FOLDER = './upload_folder'
 
 app = Flask(__name__)
 
-socketio = SocketIO(app)
+# Create server using socket and fix cors errors
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 CORS(app, resources={r"*": {"origins": "*"}})
@@ -59,11 +60,31 @@ dist = pgeocode.GeoDistance('us')
 connect_db(app)
 ################################################################################
 """ SOCKET IO CHAT """
+users = []
 
+@cross_origin()
+@jwt_required()
 @socketio.on('message')
 def handleMessage(msg):
     print('Message: ' + msg)
+
+    # message = Message(sender="testuser", receiver="testuser2", text=msg)
+    # db.session.add(message)
+    # db.session.commit()
     send(msg, broadcast=True)
+@cross_origin()
+@jwt_required()
+@socketio.on('message from user', namespace="/messages")
+def receive_message_from_user(message):
+    print('USER MESSAGE: {}'.format(message))
+    send('from flask', message.upper(), broadcast=True)
+    #emit?#
+@cross_origin()
+@jwt_required()
+@socketio.on('username', namespace="/private")
+def receive_username(username):
+    users.append({username:request.sid})
+    print(users)
 
 if __name__ == 'main':
     socketio.run(app)
@@ -396,7 +417,17 @@ def updateUser(username):
     else:
         return (jsonify({"error": "Unauthorized."}), 401)
 
-### post send a message
+@app.route('/users/<username>/messages', methods=["GET", "POST"])
+@cross_origin()
+@jwt_required
+def user_messages(username):
+    curr_user = get_jwt_identity()
+    if curr_user == username:
+        if request.method == "GET":
+            return jsonify({"messages": ["test1", "test2", "test3"]})
 
+
+    else:
+        return (jsonify({"error": "Unauthorized"}), 401)
 
 # ### delete user
