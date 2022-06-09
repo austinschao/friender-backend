@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from numpy import broadcast
 load_dotenv()
 
+from time import localtime, strftime
 from flask import Flask, jsonify, request, abort
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 from flask_debugtoolbar import DebugToolbarExtension
@@ -21,7 +22,7 @@ from flask_cors import CORS, cross_origin
 # from twilio.base.exceptions import TwilioRestException
 
 
-from flask_socketio import SocketIO, send, emit
+from flask_socketio import SocketIO, send, emit, join_room, leave_room
 
 UPLOAD_FOLDER = './upload_folder'
 
@@ -451,8 +452,27 @@ def private_message(payload):
 
     emit('new_private_message', message, room=recipient_sid)
 
+@cross_origin()
+@jwt_required()
+@socketio.on('join')
+def join(data):
+
+    join_room(data['room'])
+    # client joins room. Only people in the room will see messages
+    send({'message': data['username'] + " joined the " + data['room'] + " room."}, room=data['room'])
+    # Server sends a message to the all clients in the room that the user has joined
+
+@cross_origin()
+@jwt_required()
+@socketio.on('leave')
+def leave(data):
+
+    leave_room(data['room'])
+    send({'message': data['username'] + " left the " + data['room'] + " room."}, room=data['room'])
+
+
 # Python assigns this name to file that is run in CLI
 # File will be ran in CLI so statement will be true
 # if __name__ == 'main':
     # socketio.run(app, debug=True)
-    # debug=True will restart the server each time a change is made to file
+    # debug=True will rest
