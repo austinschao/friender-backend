@@ -1,4 +1,3 @@
-from curses.ascii import US
 import os
 import click
 from dotenv import load_dotenv
@@ -22,7 +21,7 @@ from flask_cors import CORS, cross_origin
 # from twilio.base.exceptions import TwilioRestException
 
 
-from flask_socketio import SocketIO, send
+from flask_socketio import SocketIO, send, emit
 
 UPLOAD_FOLDER = './upload_folder'
 
@@ -58,45 +57,7 @@ dist = pgeocode.GeoDistance('us')
 
 
 connect_db(app)
-################################################################################
-""" SOCKET IO CHAT """
-USERS = {}
 
-@cross_origin()
-@jwt_required()
-@socketio.on('message')
-def handleMessage(msg):
-    print('Message: ' + msg)
-
-    # message = Message(sender="testuser", receiver="testuser2", text=msg)
-    # db.session.add(message)
-    # db.session.commit()
-    send(msg, broadcast=True)
-@cross_origin()
-@jwt_required()
-@socketio.on('message from user', namespace="/messages")
-def receive_message_from_user(message):
-    print('USER MESSAGE: {}'.format(message))
-    socketio.emit('from flask', message.upper(), broadcast=True)
-    #emit?#
-@cross_origin()
-@jwt_required()
-@socketio.on('username', namespace="/private")
-def receive_username(username):
-    # USERS.append({username:request.sid})
-    USERS[username] = request.sid
-    print('Username added!', USERS)
-
-@cross_origin()
-@jwt_required()
-@socketio.on('private_message', namespace='/private')
-def private_message(payload):
-    recipient_sid = USERS[payload['username']]
-    message = payload['message']
-    socketio.emit('new_private_message', message, room=recipient_sid)
-
-if __name__ == 'main':
-    socketio.run(app)
 
 
 ################################################################################
@@ -440,3 +401,58 @@ def user_messages(username):
         return (jsonify({"error": "Unauthorized"}), 401)
 
 # ### delete user
+
+
+
+
+################################################################################
+""" SOCKET IO CHAT """
+USERS = {}
+
+@cross_origin()
+@jwt_required()
+@socketio.on('message')
+def handleMessage(msg):
+    print('Message: ' + msg)
+
+    # message = Message(sender="testuser", receiver="testuser2", text=msg)
+    # db.session.add(message)
+    # db.session.commit()
+    # breakpoint()
+    send(msg, broadcast=True)
+
+
+
+@cross_origin()
+@jwt_required()
+@socketio.on('message from user', namespace="/messages")
+def receive_message_from_user(message):
+    print('USER MESSAGE: {}'.format(message))
+    print("HELLO")
+    emit('from flask', message.upper(), broadcast=True)
+    #emit?#
+
+@cross_origin()
+@jwt_required()
+@socketio.on('username', namespace="/private")
+def receive_username(payload):
+    # USERS.append({username:request.sid})
+    USERS[payload['username']] = request.sid
+    #request.sid is the name of the room
+    # USERS[payload['username']] = payload['token']
+    print('Username added!', USERS)
+
+@cross_origin()
+@jwt_required()
+@socketio.on('private_message', namespace='/private')
+def private_message(payload):
+    recipient_sid = USERS[payload['username']]
+    message = payload['message']
+
+    emit('new_private_message', message, room=recipient_sid)
+
+# Python assigns this name to file that is run in CLI
+# File will be ran in CLI so statement will be true
+# if __name__ == 'main':
+    # socketio.run(app, debug=True)
+    # debug=True will restart the server each time a change is made to file
