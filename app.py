@@ -414,17 +414,7 @@ USERS = {}
 @jwt_required()
 @socketio.on('message')
 def handleMessage(data):
-    # breakpoint()
-    print(data)
-    # message = data.get('message')
-    # print("Message:" + message)
-    # message = Message(sender="testuser", receiver="testuser2", text=msg)
-    # db.session.add(message)
-    # db.session.commit()
-    # breakpoint()
-    # room = USERS[data['room']]
-    # print[room]
-    send(data['message'])
+    send({'message': data['message'], 'username': data['username'], 'room': data['room']})
 
 # @cross_origin()
 # @jwt_required()
@@ -459,9 +449,9 @@ def receive_username(payload):
 @socketio.on('private_message', namespace='/private')
 def private_message(payload):
     print("it reached server side private message")
-    recipient_sid = USERS[payload['username']]
-    print(payload['username'])
-    message = f"{payload['username']}: {payload['message']}"
+    recipient_sid = USERS[payload['receiver']]
+    print(payload['receiver'])
+    message = f"{payload['sender']}: {payload['message']}"
 
     emit('new_private_message', message, room=recipient_sid)
 
