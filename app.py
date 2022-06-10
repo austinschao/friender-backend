@@ -409,6 +409,7 @@ def user_messages(username):
 ################################################################################
 """ SOCKET IO CHAT """
 USERS = {}
+ROOMS = ["test"]
 
 @cross_origin()
 @jwt_required()
@@ -419,10 +420,10 @@ def handleMessage(data):
 # @cross_origin()
 # @jwt_required()
 # @socketio.on('connect')
-# def connect_user(username):
-#     print(f"{username} has connected.")
+# def send_room_name(ROOMS):
 
-#     send(f"{username} has connected.", broadcast=True)
+
+#     emit('room_name', ROOMS)
 
 
 # @cross_origin()
@@ -442,6 +443,7 @@ def receive_username(payload):
     USERS[payload['username']] = request.sid
     #request.sid is the name of the room
     # USERS[payload['username']] = payload['token']
+    emit('room_name', ROOMS, room=request.sid)
     print(f"\n\nUsername added!\n\n{USERS}\n\n")
 
 @cross_origin()
