@@ -413,25 +413,36 @@ USERS = {}
 @cross_origin()
 @jwt_required()
 @socketio.on('message')
-def handleMessage(msg):
-    print('Message: ' + msg)
-
+def handleMessage(data):
+    # breakpoint()
+    print(data)
+    # message = data.get('message')
+    # print("Message:" + message)
     # message = Message(sender="testuser", receiver="testuser2", text=msg)
     # db.session.add(message)
     # db.session.commit()
     # breakpoint()
-    send(msg, broadcast=True)
+    # room = USERS[data['room']]
+    # print[room]
+    send(data['message'])
+
+# @cross_origin()
+# @jwt_required()
+# @socketio.on('connect')
+# def connect_user(username):
+#     print(f"{username} has connected.")
+
+#     send(f"{username} has connected.", broadcast=True)
 
 
-
-@cross_origin()
-@jwt_required()
-@socketio.on('message from user', namespace="/messages")
-def receive_message_from_user(message):
-    print('USER MESSAGE: {}'.format(message))
-    print("HELLO")
-    emit('from flask', message.upper(), broadcast=True)
-    #emit?#
+# @cross_origin()
+# @jwt_required()
+# @socketio.on('message from user', namespace="/messages")
+# def receive_message_from_user(message):
+#     print('USER MESSAGE: {}'.format(message))
+#     print("HELLO")
+#     emit('from flask', message.upper(), broadcast=True)
+#     #emit?#
 
 @cross_origin()
 @jwt_required()
@@ -441,14 +452,16 @@ def receive_username(payload):
     USERS[payload['username']] = request.sid
     #request.sid is the name of the room
     # USERS[payload['username']] = payload['token']
-    print('Username added!', USERS)
+    print(f"\n\nUsername added!\n\n{USERS}\n\n")
 
 @cross_origin()
 @jwt_required()
 @socketio.on('private_message', namespace='/private')
 def private_message(payload):
+    print("it reached server side private message")
     recipient_sid = USERS[payload['username']]
-    message = payload['message']
+    print(payload['username'])
+    message = f"{payload['username']}: {payload['message']}"
 
     emit('new_private_message', message, room=recipient_sid)
 
@@ -473,6 +486,6 @@ def leave(data):
 
 # Python assigns this name to file that is run in CLI
 # File will be ran in CLI so statement will be true
-# if __name__ == 'main':
-    # socketio.run(app, debug=True)
+if __name__ == 'main':
+    socketio.run(app, debug=True)
     # debug=True will rest
