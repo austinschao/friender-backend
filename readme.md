@@ -26,11 +26,17 @@ Friender is a full stack application that allows users to find a potential frien
 
 ### Installation
 
-After downloading the code from GitHub:
+After downloading the code from GitHub, create a venv folder and install the requirements:
+
+    $ python3 -m venv venv
+
+To activate the venv:
+
+    $ source venv/bin/activate
+
+To installs the requirements:
 
     $ pip3 install -r requirements.txt
-
-    Installs all of the requirements for the backend
 
 To start the React component of the application:
 
