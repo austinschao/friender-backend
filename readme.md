@@ -44,6 +44,30 @@ To start the backend server:
 
     $ npm run start-api
 
+## Usage
+
+Insert dummy data into a Postgres database from the Mac terminal:
+
+    $ psql (Activates PSQL if it's already been installed)
+
+    CREATE DATABASE friender; (Creates database for Warbler dummy data)
+
+    Control-D (exits PSQL)
+
+Create .env file with the following information:
+
+    Set your own SECRET_KEY:
+        for example, SECRET_KEY=abc123
+
+    Set your own AWS_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY for uploading images
+
+    DATABASE_URL=postgresql:///friender
+
+
+Inside of the root directory, seed the database with dummy data for Friender:
+
+    $ python3 seed.py
+
 
 
 <!-- Routes -->
