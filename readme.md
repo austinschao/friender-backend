@@ -21,7 +21,6 @@
 
 Friender is a full stack application that allows users to find a potential friend. Users will have the ability to match with each other and send private messages (work in progress).
 
-<p>&nbsp;</p>
 
 ### Installation
 
