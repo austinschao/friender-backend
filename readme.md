@@ -6,8 +6,7 @@
 ## Frontend: JavaScript - React
 ## Backend: Python - Flask - Postgres
 
-<p>&nbsp;</p>
-
+<!-- Built with -->
 ### Built With
 * [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 * [Python](https://docs.python.org/3/)
