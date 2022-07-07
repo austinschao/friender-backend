@@ -392,6 +392,13 @@ def updateUser(username):
 @cross_origin()
 @jwt_required
 def user_messages(username):
+    """
+    Select all messages where current user is the sender
+        and the other person is the receiver
+    Select all messages where the other person is the sender
+        and the current user is the receiver
+    Organize it by descending order in timestamp
+    """
     curr_user = get_jwt_identity()
     if curr_user == username:
         if request.method == "GET":
@@ -406,10 +413,11 @@ def user_messages(username):
 
 
 
+
 ################################################################################
 """ SOCKET IO CHAT """
 USERS = {}
-ROOMS = ["test"]
+ROOMS = ["test", "test2"]
 
 @cross_origin()
 @jwt_required()
@@ -437,13 +445,14 @@ def handleMessage(data):
 
 @cross_origin()
 @jwt_required()
-@socketio.on('username', namespace="/private")
+@socketio.on('username') #namespace="/private"#
 def receive_username(payload):
     # USERS.append({username:request.sid})
     USERS[payload['username']] = request.sid
+    data = {"rooms": ROOMS, "room":request.sid}
     #request.sid is the name of the room
     # USERS[payload['username']] = payload['token']
-    emit('room_name', ROOMS, room=request.sid)
+    emit('room_name', data)
     print(f"\n\nUsername added!\n\n{USERS}\n\n")
 
 @cross_origin()
@@ -455,7 +464,7 @@ def private_message(payload):
     print(payload['receiver'])
     message = f"{payload['sender']}: {payload['message']}"
 
-    emit('new_private_message', message, room=recipient_sid)
+    emit('new_message', message, room=recipient_sid) #new_private_message#
 
 @cross_origin()
 @jwt_required()
